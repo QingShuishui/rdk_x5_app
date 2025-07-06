@@ -24,7 +24,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.delay
+import top.minepixel.rdk.ui.viewmodel.DeviceViewModel
 import top.minepixel.rdk.ui.components.MiCard
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,10 +38,14 @@ fun UserCenterScreen(
     onNavigateToAddDevice: () -> Unit = {},
     onNavigateToAboutApp: () -> Unit = {},
     onNavigateToFeedback: () -> Unit = {},
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    deviceViewModel: DeviceViewModel = hiltViewModel()
 ) {
     var showContent by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
+
+    // 获取设备统计
+    val connectedDevices by deviceViewModel.connectedDevices.collectAsState()
     
     LaunchedEffect(Unit) {
         delay(200)
@@ -187,7 +193,7 @@ fun UserCenterScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        UserStatItem("3", "已连接设备")
+                        UserStatItem("$connectedDevices", "已连接设备")
                         UserStatItem("25", "完成任务")
                         UserStatItem("156h", "总使用时长")
                     }

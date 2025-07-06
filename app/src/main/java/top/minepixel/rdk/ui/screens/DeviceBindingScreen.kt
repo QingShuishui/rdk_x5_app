@@ -22,7 +22,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.delay
+import top.minepixel.rdk.ui.viewmodel.DeviceViewModel
 import top.minepixel.rdk.ui.components.MiCard
 
 // 设备数据类
@@ -42,27 +44,19 @@ enum class DeviceType {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DeviceBindingScreen(onNavigateBack: () -> Unit = {}) {
+fun DeviceBindingScreen(
+    onNavigateBack: () -> Unit = {},
+    deviceViewModel: DeviceViewModel = hiltViewModel()
+) {
     var showContent by remember { mutableStateOf(false) }
     var showAddDeviceDialog by remember { mutableStateOf(false) }
     var isScanning by remember { mutableStateOf(false) }
     
-    // 模拟设备列表
-    var devices by remember {
-        mutableStateOf(
-            listOf(
-                SmartDevice(
-                    id = "robot_001",
-                    name = "RDK_X5扫地机器人",
-                    type = DeviceType.VACUUM_ROBOT,
-                    isOnline = true,
-                    isConnected = true,
-                    batteryLevel = 85,
-                    lastActivity = "2分钟前"
-                )
-            )
-        )
-    }
+    // 从DeviceViewModel获取设备列表和统计
+    val devices by deviceViewModel.devices.collectAsState()
+    val totalDevices by deviceViewModel.totalDevices.collectAsState()
+    val onlineDevices by deviceViewModel.onlineDevices.collectAsState()
+    val connectedDevices by deviceViewModel.connectedDevices.collectAsState()
     
     LaunchedEffect(Unit) {
         delay(200)
@@ -118,15 +112,17 @@ fun DeviceBindingScreen(onNavigateBack: () -> Unit = {}) {
                     if (isScanning) {
                         LaunchedEffect(isScanning) {
                             delay(3000)
-                            // 添加新设备
-                            devices = devices + SmartDevice(
-                                id = "new_${System.currentTimeMillis()}",
-                                name = "新设备",
-                                type = DeviceType.VACUUM_ROBOT,
-                                isOnline = true,
-                                isConnected = false,
-                                batteryLevel = 100,
-                                lastActivity = "刚刚发现"
+                            // 通过DeviceViewModel添加新设备
+                            deviceViewModel.addDevice(
+                                SmartDevice(
+                                    id = "new_${System.currentTimeMillis()}",
+                                    name = "新设备",
+                                    type = DeviceType.VACUUM_ROBOT,
+                                    isOnline = true,
+                                    isConnected = false,
+                                    batteryLevel = 100,
+                                    lastActivity = "刚刚发现"
+                                )
                             )
                             isScanning = false
                             showAddDeviceDialog = false
@@ -195,17 +191,17 @@ fun DeviceBindingScreen(onNavigateBack: () -> Unit = {}) {
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
                             DeviceStatItem(
-                                value = devices.size.toString(),
+                                value = totalDevices.toString(),
                                 label = "总设备",
                                 icon = Icons.Default.Devices
                             )
                             DeviceStatItem(
-                                value = devices.count { it.isOnline }.toString(),
+                                value = onlineDevices.toString(),
                                 label = "在线设备",
                                 icon = Icons.Default.CloudDone
                             )
                             DeviceStatItem(
-                                value = devices.count { it.isConnected }.toString(),
+                                value = connectedDevices.toString(),
                                 label = "已连接",
                                 icon = Icons.Default.Link
                             )
@@ -256,13 +252,10 @@ fun DeviceBindingScreen(onNavigateBack: () -> Unit = {}) {
                     DeviceCard(
                         device = device,
                         onConnect = { deviceId ->
-                            devices = devices.map { 
-                                if (it.id == deviceId) it.copy(isConnected = !it.isConnected)
-                                else it
-                            }
+                            deviceViewModel.toggleDeviceConnection(deviceId)
                         },
                         onRemove = { deviceId ->
-                            devices = devices.filter { it.id != deviceId }
+                            deviceViewModel.removeDevice(deviceId)
                         }
                     )
                 }

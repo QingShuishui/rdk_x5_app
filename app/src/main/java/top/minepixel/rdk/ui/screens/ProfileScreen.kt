@@ -20,16 +20,22 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.delay
 import top.minepixel.rdk.ui.components.MiCard
 import top.minepixel.rdk.ui.components.MiClickableCard
+import top.minepixel.rdk.ui.viewmodel.DeviceViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit = {},
+    deviceViewModel: DeviceViewModel = hiltViewModel()
 ) {
     var showContent by remember { mutableStateOf(false) }
+
+    // 获取设备统计
+    val connectedDevices by deviceViewModel.connectedDevices.collectAsState()
     
     LaunchedEffect(Unit) {
         delay(200)
@@ -119,7 +125,7 @@ fun ProfileScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
-                            ProfileStat("3", "已连接设备")
+                            ProfileStat("$connectedDevices", "已连接设备")
                             ProfileStat("12", "清洁任务")
                             ProfileStat("156", "总使用时长")
                         }

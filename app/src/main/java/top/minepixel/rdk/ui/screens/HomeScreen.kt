@@ -37,17 +37,20 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.delay
 import top.minepixel.rdk.data.model.CleaningMode
 import top.minepixel.rdk.data.model.CommandAction
+import top.minepixel.rdk.data.manager.DeviceManager
 import top.minepixel.rdk.data.model.RobotCommand
 import top.minepixel.rdk.data.model.RobotMode
 import top.minepixel.rdk.ui.components.MiCard
 import top.minepixel.rdk.ui.components.MiClickableCard
 import top.minepixel.rdk.ui.components.MiOutlinedButton
 import top.minepixel.rdk.ui.components.MiPrimaryButton
+import top.minepixel.rdk.ui.viewmodel.DeviceViewModel
 import top.minepixel.rdk.ui.viewmodel.HomeViewModel
 
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
+    deviceViewModel: DeviceViewModel = hiltViewModel(),
     onNavigateToMyDevices: () -> Unit = {},
     onNavigateToAddDevice: () -> Unit = {},
     onNavigateToTasks: () -> Unit = {},
@@ -55,6 +58,10 @@ fun HomeScreen(
 ) {
     val robotStatus by viewModel.robotStatus.collectAsState()
     val detectedItems by viewModel.detectedItems.collectAsState()
+
+    // 设备管理状态
+    val totalDevices by deviceViewModel.totalDevices.collectAsState()
+    val onlineDevices by deviceViewModel.onlineDevices.collectAsState()
     
     // 创建进入动画状态
     val animationState = remember {
@@ -159,8 +166,8 @@ fun HomeScreen(
                     DeviceManagementSection(
                         onNavigateToMyDevices = onNavigateToMyDevices,
                         onNavigateToAddDevice = onNavigateToAddDevice,
-                        totalDevices = 1,
-                        onlineDevices = 1
+                        totalDevices = totalDevices,
+                        onlineDevices = onlineDevices
                     )
                 }
             }

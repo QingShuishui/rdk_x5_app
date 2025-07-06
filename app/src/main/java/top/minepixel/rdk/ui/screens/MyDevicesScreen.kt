@@ -20,7 +20,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.delay
+import top.minepixel.rdk.ui.viewmodel.DeviceViewModel
 
 data class ManagedDevice(
     val id: String,
@@ -41,9 +43,30 @@ enum class DeviceCategory(val displayName: String, val icon: androidx.compose.ui
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MyDevicesScreen(onNavigateBack: () -> Unit = {}) {
+fun MyDevicesScreen(
+    onNavigateBack: () -> Unit = {},
+    deviceViewModel: DeviceViewModel = hiltViewModel()
+) {
     var showContent by remember { mutableStateOf(false) }
-    var devices by remember { mutableStateOf(getSampleManagedDevices()) }
+
+    // 从DeviceViewModel获取设备并转换为ManagedDevice
+    val smartDevices by deviceViewModel.devices.collectAsState()
+    val devices = smartDevices.map { smartDevice ->
+        ManagedDevice(
+            id = smartDevice.id,
+            name = smartDevice.name,
+            category = when (smartDevice.type) {
+                top.minepixel.rdk.ui.screens.DeviceType.VACUUM_ROBOT -> DeviceCategory.VACUUM
+                top.minepixel.rdk.ui.screens.DeviceType.AIR_PURIFIER -> DeviceCategory.PURIFIER
+                top.minepixel.rdk.ui.screens.DeviceType.CAMERA -> DeviceCategory.CAMERA
+                else -> DeviceCategory.VACUUM
+            },
+            isOnline = smartDevice.isOnline,
+            batteryLevel = smartDevice.batteryLevel,
+            lastSeen = smartDevice.lastActivity,
+            firmwareVersion = "1.2.3"
+        )
+    }
     
     LaunchedEffect(Unit) {
         delay(200)
@@ -106,13 +129,10 @@ fun MyDevicesScreen(onNavigateBack: () -> Unit = {}) {
                         device = device,
                         onDeviceClick = { /* 进入设备详情 */ },
                         onToggleConnection = { deviceId ->
-                            devices = devices.map { 
-                                if (it.id == deviceId) it.copy(isOnline = !it.isOnline) 
-                                else it 
-                            }
+                            deviceViewModel.toggleDeviceOnline(deviceId)
                         },
                         onRemoveDevice = { deviceId ->
-                            devices = devices.filter { it.id != deviceId }
+                            deviceViewModel.removeDevice(deviceId)
                         }
                     )
                 }
