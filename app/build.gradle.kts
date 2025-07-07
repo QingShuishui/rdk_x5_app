@@ -27,6 +27,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // 使用debug签名配置进行release构建
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -101,6 +103,12 @@ dependencies {
     // JSON 解析 (Moshi)
     implementation(libs.moshi.kotlin)
     kapt(libs.moshi.kotlin.codegen)
+
+    // 网络请求 (Retrofit)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.moshi)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging.interceptor)
     
     // 测试
     testImplementation(libs.junit)
