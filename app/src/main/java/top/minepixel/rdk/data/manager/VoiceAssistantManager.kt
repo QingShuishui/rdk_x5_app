@@ -442,15 +442,15 @@ class VoiceAssistantManager @Inject constructor(
                     Log.d(TAG, "字节跳动TTS合成成功")
                     // 状态会在ByteDanceTtsManager中管理
                 }.onFailure { e ->
-                    Log.e(TAG, "字节跳动TTS合成失败", e)
-                    _state.value = VoiceAssistantState.IDLE
-                    _currentSpeakingText.value = ""
+                    Log.e(TAG, "字节跳动TTS合成失败，尝试使用原生TTS", e)
+                    // 使用原生TTS作为备用方案
+                    speakTextWithNativeTts(text)
                 }
 
             } catch (e: Exception) {
-                Log.e(TAG, "字节跳动TTS调用异常", e)
-                _state.value = VoiceAssistantState.IDLE
-                _currentSpeakingText.value = ""
+                Log.e(TAG, "字节跳动TTS调用异常，尝试使用原生TTS", e)
+                // 使用原生TTS作为备用方案
+                speakTextWithNativeTts(text)
             }
         }
 
@@ -578,6 +578,21 @@ class VoiceAssistantManager @Inject constructor(
      */
     fun addMessage(message: VoiceMessage) {
         val currentMessages = _messages.value.toMutableList()
+
+        // 检查是否已存在相同内容和发送者的消息（在最近5秒内）
+        val currentTime = System.currentTimeMillis()
+        val isDuplicate = currentMessages.any { existingMessage ->
+            existingMessage.content == message.content &&
+            existingMessage.isFromUser == message.isFromUser &&
+            (currentTime - existingMessage.timestamp) < 5000 // 5秒内的重复消息
+        }
+
+        if (isDuplicate) {
+            Log.w(TAG, "检测到重复消息，跳过添加: ${message.content}")
+            return
+        }
+
+        Log.d(TAG, "添加消息: ${message.content} (来自用户: ${message.isFromUser})")
         currentMessages.add(message)
         _messages.value = currentMessages
     }

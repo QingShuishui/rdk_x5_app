@@ -44,10 +44,13 @@ class BaiduVoiceAssistantViewModel @Inject constructor(
     // 错误状态
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
-    
+
     // 是否正在处理
     private val _isProcessing = MutableStateFlow(false)
     val isProcessing: StateFlow<Boolean> = _isProcessing.asStateFlow()
+
+    // 已处理的消息ID集合，用于防止重复处理
+    private val processedMessageIds = mutableSetOf<String>()
     
     init {
         // 监听百度语音识别结果
@@ -120,9 +123,9 @@ class BaiduVoiceAssistantViewModel @Inject constructor(
                 
                 result.onSuccess { recognizedText ->
                     Log.d(TAG, "百度语音识别成功: $recognizedText")
-                    if (recognizedText.isNotBlank()) {
-                        processRecognizedText(recognizedText)
-                    } else {
+                    // 注意：不在这里直接调用processRecognizedText，
+                    // 因为init块中的监听器会自动处理recognitionResult
+                    if (recognizedText.isBlank()) {
                         _errorMessage.value = "未识别到有效语音内容"
                         voiceAssistantManager.setState(VoiceAssistantState.IDLE)
                     }
@@ -151,13 +154,13 @@ class BaiduVoiceAssistantViewModel @Inject constructor(
 
                 Log.d(TAG, "处理识别文本: $recognizedText")
 
-                // 添加语音消息到消息历史，统一格式
-                val voiceMessage = VoiceMessage(
-                    content = "语音消息：$recognizedText",
+                // 添加用户消息到消息历史（只添加一次，不重复）
+                val userMessage = VoiceMessage(
+                    content = recognizedText,
                     isFromUser = true,
-                    type = MessageType.AUDIO
+                    type = MessageType.TEXT  // 识别后的文本消息
                 )
-                voiceAssistantManager.addMessage(voiceMessage)
+                voiceAssistantManager.addMessage(userMessage)
 
                 // 异步发送给Coze API获取智能回复，避免阻塞
                 launch {
@@ -203,14 +206,8 @@ class BaiduVoiceAssistantViewModel @Inject constructor(
                 Log.e(TAG, "Coze API调用失败", e)
                 // 在主线程处理错误
                 withContext(Dispatchers.Main) {
-                    // 如果API失败，使用本地回复
-                    val fallbackReply = generateReply(userInput)
-                    val assistantMessage = VoiceMessage(
-                        content = fallbackReply,
-                        isFromUser = false
-                    )
-                    voiceAssistantManager.addMessage(assistantMessage)
-                    voiceAssistantManager.speakText(fallbackReply)
+                    // 设置错误状态，不使用fallback回复避免重复
+                    _errorMessage.value = "AI回复失败，请重试"
                     voiceAssistantManager.setState(VoiceAssistantState.IDLE)
                     _isProcessing.value = false
                 }
@@ -227,21 +224,37 @@ class BaiduVoiceAssistantViewModel @Inject constructor(
 
             when (response.event) {
                 "conversation.message.completed" -> {
-                    response.data?.content?.let { content ->
-                        if (response.data?.type == "answer" && content.isNotBlank()) {
-                            Log.d(TAG, "✅ 收到AI回复: $content")
+                    response.data?.let { data ->
+                        val messageId = data.id
+                        val content = data.content
+
+                        Log.d(TAG, "🔍 检查消息: ID=$messageId, Type=${data.type}, Content=${content?.take(50)}")
+
+                        if (data.type == "answer" && !content.isNullOrBlank() && messageId != null) {
+                            // 检查是否已经处理过这条消息
+                            if (processedMessageIds.contains(messageId)) {
+                                Log.w(TAG, "⚠️ 消息已处理，跳过: $messageId")
+                                return@let
+                            }
+
+                            // 标记消息为已处理
+                            processedMessageIds.add(messageId)
+                            Log.d(TAG, "✅ 收到AI回复 (ID: $messageId): $content")
 
                             // 添加AI回复到消息历史
                             val assistantMessage = VoiceMessage(
                                 content = content,
                                 isFromUser = false
                             )
+                            Log.d(TAG, "📝 准备添加AI消息到历史: ${content.take(50)}")
                             voiceAssistantManager.addMessage(assistantMessage)
 
                             // 播放TTS回复
                             voiceAssistantManager.speakText(content)
                             voiceAssistantManager.setState(VoiceAssistantState.IDLE)
                             _isProcessing.value = false
+                        } else {
+                            Log.d(TAG, "🚫 跳过消息: Type=${data.type}, ContentEmpty=${content.isNullOrBlank()}, IDNull=${messageId == null}")
                         }
                     }
                 }
@@ -324,6 +337,7 @@ class BaiduVoiceAssistantViewModel @Inject constructor(
     fun clearConversation() {
         voiceAssistantManager.clearMessages()
         baiduSpeechManager.clearResult()
+        processedMessageIds.clear() // 清除已处理消息ID集合
         _errorMessage.value = null
     }
     

@@ -32,7 +32,7 @@ class DeviceManager @Inject constructor() {
         return listOf(
             SmartDevice(
                 id = "robot_001",
-                name = "小米扫地机器人",
+                name = "光净精灵",
                 type = DeviceType.VACUUM_ROBOT,
                 isOnline = true,
                 isConnected = true,

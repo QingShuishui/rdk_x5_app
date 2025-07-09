@@ -91,15 +91,6 @@ class VoiceAssistantViewModel @Inject constructor(
                 _isProcessing.value = true
                 _errorMessage.value = null
 
-                // 添加语音消息到历史（显示用）
-                val voiceMessage = VoiceMessage(
-                    content = "[语音消息]",
-                    isFromUser = true,
-                    type = MessageType.AUDIO,
-                    audioPath = audioFile.absolutePath
-                )
-                voiceAssistantManager.addMessage(voiceMessage)
-
                 // 模拟处理过程
                 Log.d(TAG, "开始模拟处理延迟...")
                 kotlinx.coroutines.delay(2000)
@@ -108,12 +99,13 @@ class VoiceAssistantViewModel @Inject constructor(
                 val recognizedText = "开始清洁" // 模拟识别到的文本
                 Log.d(TAG, "模拟识别结果: $recognizedText")
 
-                // 添加识别结果到消息历史（不加前缀，UI会自动显示）
-                val recognizedMessage = VoiceMessage(
+                // 只添加识别结果到消息历史（避免重复消息）
+                val userMessage = VoiceMessage(
                     content = recognizedText,
-                    isFromUser = true
+                    isFromUser = true,
+                    type = MessageType.TEXT  // 识别后的文本消息
                 )
-                voiceAssistantManager.addMessage(recognizedMessage)
+                voiceAssistantManager.addMessage(userMessage)
 
                 // 模拟AI回复
                 val assistantMessage = VoiceMessage(

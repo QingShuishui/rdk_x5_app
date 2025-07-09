@@ -30,7 +30,7 @@ class HomeViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = RobotStatus(
                 id = "",
-                name = "智能清洁机器人",
+                name = "光净精灵",
                 isOnline = false,
                 battery = 0
             )

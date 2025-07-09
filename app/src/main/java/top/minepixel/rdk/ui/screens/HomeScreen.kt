@@ -54,7 +54,8 @@ fun HomeScreen(
     onNavigateToMyDevices: () -> Unit = {},
     onNavigateToAddDevice: () -> Unit = {},
     onNavigateToTasks: () -> Unit = {},
-    onNavigateToVoice: () -> Unit = {}
+    onNavigateToVoice: () -> Unit = {},
+    onNavigateToDeviceManagement: () -> Unit = {}
 ) {
     val robotStatus by viewModel.robotStatus.collectAsState()
     val detectedItems by viewModel.detectedItems.collectAsState()
@@ -166,6 +167,7 @@ fun HomeScreen(
                     DeviceManagementSection(
                         onNavigateToMyDevices = onNavigateToMyDevices,
                         onNavigateToAddDevice = onNavigateToAddDevice,
+                        onNavigateToDeviceManagement = onNavigateToDeviceManagement,
                         totalDevices = totalDevices,
                         onlineDevices = onlineDevices
                     )
@@ -802,6 +804,7 @@ fun QuickActionButton(
 fun DeviceManagementSection(
     onNavigateToMyDevices: () -> Unit,
     onNavigateToAddDevice: () -> Unit,
+    onNavigateToDeviceManagement: () -> Unit,
     totalDevices: Int,
     onlineDevices: Int
 ) {
@@ -906,38 +909,63 @@ fun DeviceManagementSection(
             }
             
             // 操作按钮
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                OutlinedButton(
-                    onClick = onNavigateToMyDevices,
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(10.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                // 第一行：我的设备 和 添加设备
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.List,
-                        contentDescription = "我的设备",
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("我的设备", style = MaterialTheme.typography.bodySmall)
+                    OutlinedButton(
+                        onClick = onNavigateToMyDevices,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.List,
+                            contentDescription = "我的设备",
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("我的设备", style = MaterialTheme.typography.bodySmall)
+                    }
+
+                    Button(
+                        onClick = onNavigateToAddDevice,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "添加设备",
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("添加设备", style = MaterialTheme.typography.bodySmall)
+                    }
                 }
-                
+
+                // 第二行：设备管理按钮
                 Button(
-                    onClick = onNavigateToAddDevice,
-                    modifier = Modifier.weight(1f),
+                    onClick = onNavigateToDeviceManagement,
+                    modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "添加设备",
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "设备管理",
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("添加设备", style = MaterialTheme.typography.bodySmall)
+                    Text("设备管理", style = MaterialTheme.typography.bodySmall)
                 }
             }
         }

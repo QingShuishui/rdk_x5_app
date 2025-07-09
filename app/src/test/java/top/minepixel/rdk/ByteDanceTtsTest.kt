@@ -67,7 +67,7 @@ class ByteDanceTtsTest {
         assertEquals("1LlQe1og6YqchcAd9yHLZav0uS7ah5DD", TtsConstants.SECRET_KEY)
         
         assertEquals("zh_male_M392_conversation_wvae_bigtts", TtsConstants.VOICE_TYPE_MALE)
-        assertEquals("zh_female_F001_conversation_wvae_bigtts", TtsConstants.VOICE_TYPE_FEMALE)
+        assertEquals("zh_female_roumeinvyou_emo_v2_mars_bigtts", TtsConstants.VOICE_TYPE_FEMALE)
         
         assertEquals("mp3", TtsConstants.ENCODING_MP3)
         assertEquals("wav", TtsConstants.ENCODING_WAV)

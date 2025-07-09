@@ -44,7 +44,7 @@ class RobotRepositoryImpl @Inject constructor(
     private val _robotStatus = MutableStateFlow(
         RobotStatus(
             id = "demo_robot_1",
-            name = "智能清洁机器人",
+            name = "光净精灵",
             isOnline = false,
             battery = 80,
             mode = RobotMode.IDLE

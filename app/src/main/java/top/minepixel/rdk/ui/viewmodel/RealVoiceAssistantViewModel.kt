@@ -48,6 +48,9 @@ class RealVoiceAssistantViewModel @Inject constructor(
     private val _conversationId = MutableStateFlow<String?>(null)
     private val _chatId = MutableStateFlow<String?>(null)
 
+    // 已处理的消息ID集合，用于防止重复处理
+    private val processedMessageIds = mutableSetOf<String>()
+
     init {
         // 监听百度语音识别结果
         viewModelScope.launch {
@@ -115,14 +118,7 @@ class RealVoiceAssistantViewModel @Inject constructor(
                 voiceAssistantManager.setState(VoiceAssistantState.PROCESSING)
                 _isProcessing.value = true
 
-                // 添加语音消息到历史
-                val voiceMessage = VoiceMessage(
-                    content = "[语音消息]",
-                    isFromUser = true,
-                    type = MessageType.AUDIO,
-                    audioPath = audioFile.absolutePath
-                )
-                voiceAssistantManager.addMessage(voiceMessage)
+                // 注意：不在这里添加消息，等识别完成后统一添加，避免重复消息
 
                 // 调用百度语音识别
                 val result = baiduSpeechManager.recognizeSpeech(audioFile)
@@ -155,12 +151,13 @@ class RealVoiceAssistantViewModel @Inject constructor(
             try {
                 Log.d(TAG, "处理识别文本: $recognizedText")
 
-                // 添加识别结果消息到历史（不加前缀，UI会自动显示）
-                val recognizedMessage = VoiceMessage(
+                // 添加用户消息到历史（只添加一次）
+                val userMessage = VoiceMessage(
                     content = recognizedText,
-                    isFromUser = true
+                    isFromUser = true,
+                    type = MessageType.TEXT  // 识别后的文本消息
                 )
-                voiceAssistantManager.addMessage(recognizedMessage)
+                voiceAssistantManager.addMessage(userMessage)
 
                 // 发送给扣子API获取回复
                 sendToCozeAPI(recognizedText)
@@ -230,15 +227,27 @@ class RealVoiceAssistantViewModel @Inject constructor(
 
                     "conversation.message.completed" -> {
                         // 消息完成
-                        response.data?.content?.let { rawContent ->
-                            Log.d(TAG, "收到原始消息: ${rawContent.take(100)}")
-                            Log.d(TAG, "消息类型: ${response.data?.type}")
+                        response.data?.let { data ->
+                            val messageId = data.id
+                            val rawContent = data.content
+
+                            Log.d(TAG, "收到原始消息: ${rawContent?.take(100)}")
+                            Log.d(TAG, "消息类型: ${data.type}, 消息ID: $messageId")
 
                             // 只处理answer类型的消息，过滤掉function_call等类型
-                            when (response.data?.type) {
+                            when (data.type) {
                                 "answer" -> {
                                     // 智能体回复
-                                    if (response.data?.contentType == "text") {
+                                    if (data.contentType == "text" && !rawContent.isNullOrBlank() && messageId != null) {
+                                        // 检查是否已经处理过这条消息
+                                        if (processedMessageIds.contains(messageId)) {
+                                            Log.d(TAG, "⚠️ 消息已处理，跳过: $messageId")
+                                            return@let
+                                        }
+
+                                        // 标记消息为已处理
+                                        processedMessageIds.add(messageId)
+
                                         // 清理和过滤内容，移除函数调用信息
                                         val cleanedContent = cleanResponseContent(rawContent)
 
@@ -351,7 +360,7 @@ class RealVoiceAssistantViewModel @Inject constructor(
     private fun buildConversationHistory(): List<CozeMessage> {
         return messages.value.mapNotNull { message ->
             // 只包含文本消息，排除语音消息和系统消息
-            if (message.type == MessageType.TEXT || message.type == null) {
+            if (message.type == MessageType.TEXT) {
                 CozeMessage(
                     role = if (message.isFromUser) "user" else "assistant",
                     content = message.content,
@@ -367,7 +376,8 @@ class RealVoiceAssistantViewModel @Inject constructor(
      * 发送文本消息
      */
     fun sendTextMessage(text: String) {
-        sendToCozeAPI(text)
+        // 直接调用processRecognizedText，避免重复添加消息
+        processRecognizedText(text)
     }
 
     /**
@@ -383,6 +393,7 @@ class RealVoiceAssistantViewModel @Inject constructor(
      */
     fun clearConversation() {
         voiceAssistantManager.clearMessages()
+        processedMessageIds.clear() // 清除已处理消息ID集合
         _conversationId.value = null
         _chatId.value = null
         _errorMessage.value = null

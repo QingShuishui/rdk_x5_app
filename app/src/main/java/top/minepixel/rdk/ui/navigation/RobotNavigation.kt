@@ -30,6 +30,9 @@ object RobotDestinations {
     const val MY_DEVICES_ROUTE = "my_devices"
     const val ADD_DEVICE_ROUTE = "add_device"
     const val NETWORK_SETTINGS_ROUTE = "network_settings"
+    const val DEVICE_MANAGEMENT_ROUTE = "device_management"
+    const val CAMERA_DETECTION_ROUTE = "camera_detection"
+    const val SENSOR_DETECTION_ROUTE = "sensor_detection"
     
     // 任务管理相关
     const val CLEAN_TASKS_ROUTE = "clean_tasks"
@@ -139,6 +142,9 @@ fun RobotNavGraph(
                     },
                     onNavigateToVoice = {
                         navController.navigate(RobotDestinations.VOICE_ROUTE)
+                    },
+                    onNavigateToDeviceManagement = {
+                        navController.navigate(RobotDestinations.DEVICE_MANAGEMENT_ROUTE)
                     }
                 )
             }
@@ -214,6 +220,29 @@ fun RobotNavGraph(
             
             composable(RobotDestinations.ADD_DEVICE_ROUTE) {
                 AddDeviceScreen(onNavigateBack = { navController.popBackStack() })
+            }
+
+            // 设备管理页面
+            composable(RobotDestinations.DEVICE_MANAGEMENT_ROUTE) {
+                DeviceManagementScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToCamera = {
+                        navController.navigate(RobotDestinations.CAMERA_DETECTION_ROUTE)
+                    },
+                    onNavigateToSensor = {
+                        navController.navigate(RobotDestinations.SENSOR_DETECTION_ROUTE)
+                    }
+                )
+            }
+
+            // 摄像头检测页面
+            composable(RobotDestinations.CAMERA_DETECTION_ROUTE) {
+                CameraDetectionScreen(onNavigateBack = { navController.popBackStack() })
+            }
+
+            // 传感器检测页面
+            composable(RobotDestinations.SENSOR_DETECTION_ROUTE) {
+                SensorDetectionScreen(onNavigateBack = { navController.popBackStack() })
             }
             
             // 关于应用页面

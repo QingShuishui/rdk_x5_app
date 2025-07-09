@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">rdk_x5</string>
+
+    <!-- 机器人相关 -->
+    <string name="robot_name">光净精灵</string>
+    <string name="robot_description">智能清洁机器人助手</string>
+
+    <!-- 设备管理 -->
+    <string name="device_management">设备管理</string>
+    <string name="camera_detection">摄像头检测</string>
+    <string name="sensor_detection">传感器检测</string>
+    <string name="device_status">设备状态</string>
+    <string name="camera_status">摄像头状态</string>
+    <string name="sensor_status">传感器状态</string>
 </resources>
